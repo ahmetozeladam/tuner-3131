@@ -105,43 +105,52 @@ function idle() {
 // ---------- Frekans bulma (otokorelasyon) ----------
 // Fikir: ses dalgasını kendi kaydırılmış haline benzet. En çok benzeyen
 // kaydırma miktarı dalganın periyodudur. Frekans = örnekleme hızı / periyot.
+// Eski telefonlar yavaş olduğu için sesi önce seyreltiyoruz (4 örneğin ortalaması)
+// ve sadece gerekli kaydırma aralığını hesaplıyoruz. Bu, işi yaklaşık 30 kat hafifletir.
 function findPitch(buf, sampleRate) {
   // 1) Ses çok kısıksa (sessizlik) vazgeç
   let sum = 0;
   for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
   if (Math.sqrt(sum / buf.length) < 0.01) return -1;
 
-  // 2) Baştaki ve sondaki sessiz kısımları kırp
-  let start = 0, end = buf.length - 1;
-  for (let i = 0; i < buf.length / 2; i++) {
-    if (Math.abs(buf[i]) < 0.2) { start = i; break; }
+  // 2) Seyrelt: her `step` örneğin ortalamasını al (yaklaşık 12000 Hz'e indirir)
+  const step = Math.max(1, Math.round(sampleRate / 12000));
+  const rate = sampleRate / step;
+  const n = Math.floor(buf.length / step);
+  const x = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    let s = 0;
+    for (let k = 0; k < step; k++) s += buf[i * step + k];
+    x[i] = s / step;
   }
-  for (let i = 1; i < buf.length / 2; i++) {
-    if (Math.abs(buf[buf.length - i]) < 0.2) { end = buf.length - i; break; }
-  }
-  const x = buf.slice(start, end);
-  const n = x.length;
-  if (n < 100) return -1;
 
-  // 3) Otokorelasyon: her kaydırma için benzerlik puanı
-  const c = new Float32Array(n);
-  for (let lag = 0; lag < n; lag++) {
-    for (let j = 0; j < n - lag; j++) c[lag] += x[j] * x[j + lag];
+  // 3) Otokorelasyon: sadece MIN_FREQ'e kadar olan kaydırmaları hesapla
+  const maxLag = Math.min(n - 2, Math.floor(rate / MIN_FREQ));
+  const c = new Float32Array(maxLag + 1);
+  for (let lag = 0; lag <= maxLag; lag++) {
+    let s = 0;
+    for (let j = 0; j < n - lag; j++) s += x[j] * x[j + lag];
+    c[lag] = s;
   }
 
   // 4) İlk "çukuru" geç, sonraki en yüksek tepeyi bul
   let d = 0;
-  while (d < n - 1 && c[d] > c[d + 1]) d++;
+  while (d < maxLag && c[d] > c[d + 1]) d++;
   let peak = d;
-  for (let i = d; i < n; i++) if (c[i] > c[peak]) peak = i;
-  if (peak < 1 || peak >= n - 1) return -1;
+  for (let i = d; i <= maxLag; i++) if (c[i] > c[peak]) peak = i;
+  // Yanlış oktav seçmemek için: en yüksek tepenin %90'ına ulaşan ilk tepeyi tercih et
+  const limit = c[peak] * 0.9;
+  for (let i = Math.max(d, 1); i < maxLag; i++) {
+    if (c[i] >= limit && c[i] >= c[i - 1] && c[i] >= c[i + 1]) { peak = i; break; }
+  }
+  if (peak < 1 || peak >= maxLag) return -1;
 
   // 5) Tepenin çevresine parabol uydurup daha hassas periyot bul
   const a = (c[peak - 1] + c[peak + 1] - 2 * c[peak]) / 2;
   const b = (c[peak + 1] - c[peak - 1]) / 2;
   const period = a ? peak - b / (2 * a) : peak;
 
-  const freq = sampleRate / period;
+  const freq = rate / period;
   return freq >= MIN_FREQ && freq <= MAX_FREQ ? freq : -1;
 }
 
