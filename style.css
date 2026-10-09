@@ -1,0 +1,110 @@
+/* Renkleri tek yerde tanımlıyoruz; sonra istediğin gibi değiştirebilirsin */
+:root {
+  --bg: #1b2327;
+  --panel: #27343a;
+  --face: #e6e3d6;
+  --ink: #26302f;
+  --needle: #c4412b;
+  --ok: #2fb064;
+  --text: #eef1ee;
+  --muted: #93a3a6;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Bahnschrift", "Segoe UI", system-ui, sans-serif;
+}
+
+.panel {
+  width: min(92vw, 420px);
+  padding: 24px 24px 28px;
+  text-align: center;
+  background: var(--panel);
+  border: 3px solid #3a4a51;
+  border-radius: 18px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+h1 {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* Ibre göstergesi */
+.dial { width: 100%; height: auto; display: block; }
+.face { fill: var(--face); }
+.ticks line { stroke: var(--ink); stroke-width: 2; }
+.ticks .mid { stroke-width: 4; }
+
+.needle {
+  stroke: var(--needle);
+  stroke-width: 3;
+  stroke-linecap: round;
+  transform-origin: 150px 160px; /* ibre alt ucundan döner */
+  transition: transform 0.15s ease-out;
+}
+.hub { fill: var(--ink); }
+
+.labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 14px 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Nota adı */
+.note {
+  margin-top: 8px;
+  font-size: 5.5rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: color 0.2s;
+}
+.note sup { font-size: 2rem; font-weight: 500; color: var(--muted); }
+
+.readout {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  margin: 8px 0 0;
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+}
+.readout p { margin: 0; }
+
+.status { min-height: 1.5em; margin: 14px 0 0; color: var(--muted); }
+
+button {
+  margin-top: 16px;
+  padding: 12px 24px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--needle);
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+button:hover { filter: brightness(1.1); }
+button:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
+button[hidden] { display: none; }
+
+/* Notaya tam ulaşınca JavaScript .in-tune sınıfını ekler → her şey yeşil olur */
+.panel.in-tune { border-color: var(--ok); box-shadow: 0 0 36px rgba(47, 176, 100, 0.45); }
+.panel.in-tune .note,
+.panel.in-tune .status { color: var(--ok); }
+.panel.in-tune .needle { stroke: var(--ok); }
+
+@media (prefers-reduced-motion: reduce) {
+  .needle, .panel, .note { transition: none; }
+}

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Akort Aleti</title>
+  <meta name="theme-color" content="#1b2327">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Akort">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="panel" id="panel">
+    <h1>Akort Aleti</h1>
+
+    <!-- Analog ibre göstergesi: -50 sent ile +50 sent arası -->
+    <svg class="dial" viewBox="0 0 300 180" role="img" aria-label="Akort ibresi">
+      <rect class="face" x="10" y="10" width="280" height="168" rx="14"/>
+      <g class="ticks">
+        <line x1="150" y1="40" x2="150" y2="58" transform="rotate(-45 150 160)"/>
+        <line x1="150" y1="40" x2="150" y2="50" transform="rotate(-36 150 160)"/>
+        <line x1="150" y1="40" x2="150" y2="50" transform="rotate(-27 150 160)"/>
+        <line x1="150" y1="40" x2="150" y2="50" transform="rotate(-18 150 160)"/>
+        <line x1="150" y1="40" x2="150" y2="50" transform="rotate(-9 150 160)"/>
+        <line class="mid" x1="150" y1="34" x2="150" y2="62" transform="rotate(0 150 160)"/>
+        <line x1="150" y1="40" x2="150" y2="50" transform="rotate(9 150 160)"/>
+        <line x1="150" y1="40" x2="150" y2="50" transform="rotate(18 150 160)"/>
+        <line x1="150" y1="40" x2="150" y2="50" transform="rotate(27 150 160)"/>
+        <line x1="150" y1="40" x2="150" y2="50" transform="rotate(36 150 160)"/>
+        <line x1="150" y1="40" x2="150" y2="58" transform="rotate(45 150 160)"/>
+      </g>
+      <line id="needle" class="needle" x1="150" y1="160" x2="150" y2="46"/>
+      <circle class="hub" cx="150" cy="160" r="8"/>
+    </svg>
+
+    <div class="labels">
+      <span>Pest &#9837;</span>
+      <span>Dik &#9839;</span>
+    </div>
+
+    <div class="note">
+      <span id="noteName">--</span><sup id="octave"></sup>
+    </div>
+
+    <div class="readout">
+      <p><span id="freq">0.0</span> Hz</p>
+      <p><span id="cents">0</span> sent</p>
+    </div>
+
+    <p class="status" id="status">Başlamak için mikrofonu aç.</p>
+    <button id="start" type="button">Mikrofonu Başlat</button>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
