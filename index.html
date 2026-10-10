@@ -37,14 +37,16 @@
     <section class="readout">
       <div class="note-row">
         <div class="display big" id="noteDisp"></div>
-        <!-- Diyez işareti: font yerine çizim, her telefonda aynı görünür -->
-        <svg class="sharp" id="sharp" viewBox="0 0 40 64" aria-hidden="true">
-          <line x1="14" y1="4" x2="14" y2="60"/>
-          <line x1="27" y1="4" x2="27" y2="60"/>
-          <line x1="4" y1="24" x2="37" y2="17"/>
-          <line x1="4" y1="46" x2="37" y2="39"/>
-        </svg>
-        <div class="display mid" id="octDisp"></div>
+        <!-- Sağ sütun: üstte diyez, altta oktav; oktav harfin hemen yanında durur -->
+        <div class="note-aux">
+          <svg class="sharp" id="sharp" viewBox="0 0 40 64" aria-hidden="true">
+            <line x1="14" y1="4" x2="14" y2="60"/>
+            <line x1="27" y1="4" x2="27" y2="60"/>
+            <line x1="4" y1="24" x2="37" y2="17"/>
+            <line x1="4" y1="46" x2="37" y2="39"/>
+          </svg>
+          <div class="display mid" id="octDisp"></div>
+        </div>
       </div>
       <div class="strings" id="strings"></div>
       <div class="line"><div class="display small" id="freqDisp"></div><span class="tag">HZ</span></div>

@@ -72,7 +72,14 @@ header {
   justify-content: center;
   gap: 3vh;
 }
-.note-row { display: flex; align-items: flex-end; gap: 10px; }
+.note-row { display: flex; align-items: flex-end; gap: 8px; }
+.note-aux {
+  align-self: stretch;                /* harfle aynı yükseklik */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;     /* diyez üstte, oktav altta */
+  align-items: flex-start;
+}
 .line { display: flex; align-items: flex-end; gap: 8px; }
 .display { display: flex; gap: 1.2vh; transform: skewX(-6deg); }
 .digit { aspect-ratio: 66 / 100; width: auto; }
