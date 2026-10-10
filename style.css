@@ -92,10 +92,12 @@ header {
 
 .sharp {
   align-self: flex-start;
-  font-size: min(8vh, 12vw);
-  line-height: 1;
-  color: var(--lit);
+  height: min(7vh, 10vw);
+  aspect-ratio: 40 / 64;
+  stroke: var(--lit);
+  stroke-width: 5;
   opacity: var(--ghost-op);
+  transform: skewX(-6deg);
 }
 .sharp.on { opacity: 1; }
 .tag { font-size: 0.9rem; padding-bottom: 1px; }
