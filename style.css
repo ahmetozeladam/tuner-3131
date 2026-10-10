@@ -1,110 +1,170 @@
-/* Renkleri tek yerde tanımlıyoruz; sonra istediğin gibi değiştirebilirsin */
+/* Renkler tek yerde. Akort tamamlanınca .in-tune sınıfı --lit rengini yeşile çevirir */
 :root {
-  --bg: #1b2327;
-  --panel: #27343a;
-  --face: #e6e3d6;
-  --ink: #26302f;
-  --needle: #c4412b;
-  --ok: #2fb064;
-  --text: #eef1ee;
-  --muted: #93a3a6;
+  --bg: #0b0d0a;
+  --ghost: #1c1a10;   /* sönük segment */
+  --lit: #ffb02e;     /* yanan segment */
+  --dim: #5a4a22;     /* eşiğin altındaki seviye */
+  --text: #a89a6a;
+  --tick: #2a2616;
+  --alert: #ff5a3c;   /* minimum eşik çentiği */
 }
+.unit.in-tune { --lit: #3dff7a; --text: #7fd69c; }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
   background: var(--bg);
   color: var(--text);
-  font-family: "Bahnschrift", "Segoe UI", system-ui, sans-serif;
+  font-family: Consolas, "Courier New", monospace;
+  letter-spacing: 0.08em;
 }
 
-.panel {
-  width: min(92vw, 420px);
-  padding: 24px 24px 28px;
-  text-align: center;
-  background: var(--panel);
-  border: 3px solid #3a4a51;
-  border-radius: 18px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+.unit {
+  height: 100vh;
+  height: 100dvh;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 1fr 72px;
+  grid-template-rows: auto 1fr auto auto;
+  gap: 14px 16px;
 }
 
-h1 {
-  margin: 0 0 16px;
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: var(--muted);
-}
-
-/* Ibre göstergesi */
-.dial { width: 100%; height: auto; display: block; }
-.face { fill: var(--face); }
-.ticks line { stroke: var(--ink); stroke-width: 2; }
-.ticks .mid { stroke-width: 4; }
-
-.needle {
-  stroke: var(--needle);
-  stroke-width: 3;
-  stroke-linecap: round;
-  transform-origin: 150px 160px; /* ibre alt ucundan döner */
-  transition: transform 0.15s ease-out;
-}
-.hub { fill: var(--ink); }
-
-.labels {
+header {
+  grid-column: 1 / -1;
   display: flex;
   justify-content: space-between;
-  padding: 6px 14px 0;
-  color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
+.status { color: var(--lit); }
 
-/* Nota adı */
-.note {
-  margin-top: 8px;
-  font-size: 5.5rem;
-  font-weight: 700;
-  line-height: 1;
-  transition: color 0.2s;
-}
-.note sup { font-size: 2rem; font-weight: 500; color: var(--muted); }
-
+/* ---- 7 segment ekranlar ---- */
 .readout {
   display: flex;
+  flex-direction: column;
   justify-content: center;
-  gap: 28px;
-  margin: 8px 0 0;
-  font-size: 1.15rem;
-  font-variant-numeric: tabular-nums;
+  gap: 3vh;
 }
-.readout p { margin: 0; }
+.note-row { display: flex; align-items: flex-end; gap: 10px; }
+.line { display: flex; align-items: flex-end; gap: 12px; }
+.display { display: flex; gap: 1.2vh; transform: skewX(-6deg); }
+.digit { aspect-ratio: 66 / 100; width: auto; }
+.big .digit { height: min(26vh, 38vw); }
+.mid .digit { height: min(11vh, 16vw); }
+.small .digit { height: min(7vh, 10vw); }
 
-.status { min-height: 1.5em; margin: 14px 0 0; color: var(--muted); }
+.seg, .dp { fill: var(--ghost); }
+.seg.on, .dp.on { fill: var(--lit); }
+
+.sharp {
+  align-self: flex-start;
+  font-size: min(8vh, 12vw);
+  line-height: 1;
+  color: var(--ghost);
+}
+.sharp.on { color: var(--lit); }
+.tag { font-size: 0.85rem; padding-bottom: 4px; }
+
+/* ---- Yatay pest/dik barı ---- */
+.pitch-labels { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 8px; }
+.pitch-bar {
+  position: relative;
+  height: 44px;
+  background: var(--ghost);
+  outline: 2px solid var(--tick);
+  outline-offset: 2px;
+}
+/* her 10 sentte bir cetvel çizgisi */
+.pitch-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(to right,
+    transparent 0, transparent calc(10% - 1px), var(--tick) calc(10% - 1px), var(--tick) 10%);
+}
+.fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: var(--lit);
+  transform: scaleX(0);
+  transition: transform 0.12s linear;
+}
+.fill.left { left: 0; transform-origin: right center; }
+.fill.right { left: 50%; transform-origin: left center; }
+/* ortadaki +-5 sentlik "akort tamam" bölgesi */
+.zone {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  left: 45%;
+  width: 10%;
+  border-left: 2px solid var(--text);
+  border-right: 2px solid var(--text);
+}
+
+/* ---- Dikey seviye barı ---- */
+.level {
+  grid-column: 2;
+  grid-row: 2 / 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding-top: 4px;
+}
+.level-bar {
+  position: relative;
+  flex: 1;
+  width: 28px;
+  background: var(--ghost);
+  outline: 2px solid var(--tick);
+  outline-offset: 2px;
+}
+.level-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--dim);
+  transform: scaleY(0);
+  transform-origin: bottom center;
+  transition: transform 0.08s linear;
+}
+.level-bar.active .level-fill { background: var(--lit); }
+/* --min değerini script.js hesaplar: MIN_RMS seviyesinin bar üzerindeki yeri */
+.notch {
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  bottom: var(--min, 33%);
+  height: 2px;
+  background: var(--alert);
+}
+.notch::after {
+  content: "MİN";
+  position: absolute;
+  left: calc(100% + 4px);
+  top: -6px;
+  font-size: 9px;
+  color: var(--alert);
+}
 
 button {
-  margin-top: 16px;
-  padding: 12px 24px;
+  grid-column: 1 / -1;
+  padding: 14px;
   font: inherit;
-  font-weight: 600;
-  color: var(--text);
-  background: var(--needle);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--bg);
+  background: var(--lit);
   border: 0;
-  border-radius: 10px;
+  border-radius: 6px;
   cursor: pointer;
 }
-button:hover { filter: brightness(1.1); }
-button:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
 button[hidden] { display: none; }
 
-/* Notaya tam ulaşınca JavaScript .in-tune sınıfını ekler → her şey yeşil olur */
-.panel.in-tune { border-color: var(--ok); box-shadow: 0 0 36px rgba(47, 176, 100, 0.45); }
-.panel.in-tune .note,
-.panel.in-tune .status { color: var(--ok); }
-.panel.in-tune .needle { stroke: var(--ok); }
-
 @media (prefers-reduced-motion: reduce) {
-  .needle, .panel, .note { transition: none; }
+  .fill, .level-fill { transition: none; }
 }
