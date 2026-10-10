@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Akort Aleti</title>
+  <title>Tuner</title>
   <meta name="theme-color" content="#0b0d0a">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon-192.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Akort">
+  <meta name="apple-mobile-web-app-title" content="Tuner">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main class="unit" id="unit">
     <header>
-      <span class="brand">AKORT</span>
-      <span class="status" id="status">MİKROFONU AÇ</span>
+      <span class="brand">TUNER</span>
+      <span class="status" id="status">MIC OFF</span>
     </header>
 
     <!-- Sol: mikrofon seviyesi. Kırmızı çentik = ölçüm için minimum eşik -->
@@ -30,10 +30,14 @@
 
     <!-- 7 segment ekranlar: içleri script.js tarafından çizilir -->
     <section class="readout">
+      <!-- Harf tam ortada; solda boşluk, sağda # ve oktav (barın 0 noktasıyla aynı eksen) -->
       <div class="note-row">
+        <span></span>
         <div class="display big" id="noteDisp"></div>
-        <span class="sharp" id="sharp">&#9839;</span>
-        <div class="display mid" id="octDisp"></div>
+        <div class="note-aux">
+          <span class="sharp" id="sharp">#</span>
+          <div class="display mid" id="octDisp"></div>
+        </div>
       </div>
       <div class="line"><div class="display small" id="freqDisp"></div><span class="tag">HZ</span></div>
     </section>
@@ -48,7 +52,7 @@
       </div>
     </section>
 
-    <button id="start" type="button">MİKROFONU BAŞLAT</button>
+    <button id="start" type="button">START MIC</button>
   </main>
 
   <script src="script.js"></script>

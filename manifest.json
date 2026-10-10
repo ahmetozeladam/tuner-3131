@@ -1,7 +1,7 @@
 {
-  "name": "Akort Aleti",
-  "short_name": "Akort",
-  "lang": "tr",
+  "name": "Tuner",
+  "short_name": "Tuner",
+  "lang": "en",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

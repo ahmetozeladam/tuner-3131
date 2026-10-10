@@ -157,10 +157,10 @@ async function startTuner() {
     source.connect(analyser);
 
     startBtn.hidden = true;
-    statusEl.textContent = 'BİR NOTA ÇAL';
+    statusEl.textContent = 'PLAY A NOTE';
     requestAnimationFrame(loop);
   } catch (err) {
-    statusEl.textContent = 'MİKROFON İZNİ YOK';
+    statusEl.textContent = 'MIC ACCESS DENIED';
   }
 }
 
@@ -233,8 +233,8 @@ function show(freq) {
   unit.classList.toggle('in-tune', inTune);
   unit.classList.toggle('off-tune', Math.abs(shownCents) >= OFF_TUNE);
   statusEl.textContent = inTune
-    ? 'AKORT TAMAM'
-    : shownCents < 0 ? 'PEST: SESİ YÜKSELT' : 'DİK: SESİ DÜŞÜR';
+    ? 'IN TUNE'
+    : shownCents < 0 ? 'TUNE UP' : 'TUNE DOWN';
 }
 
 // ---------- Nota yokken ekranı sıfırla ----------
@@ -247,7 +247,7 @@ function idle() {
   sharpEl.classList.remove('on');
   setBar(0);
   unit.classList.remove('in-tune', 'off-tune');
-  if (audioCtx) statusEl.textContent = 'BİR NOTA ÇAL';
+  if (audioCtx) statusEl.textContent = 'PLAY A NOTE';
 }
 
 // ---------- Frekans bulma (otokorelasyon) ----------

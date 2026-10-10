@@ -1,3 +1,20 @@
+/* Barlow Condensed: .ttf dosyalarını bu dosyayla aynı klasöre koy.
+   Dosya bulunamazsa aşağıdaki yedek fontlar kullanılır, uygulama bozulmaz. */
+@font-face {
+  font-family: "Barlow Condensed";
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url("BarlowCondensed-Medium.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Barlow Condensed";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("BarlowCondensed-SemiBold.ttf") format("truetype");
+}
+
 /* Renkler tek yerde. Akort tamamlanınca .in-tune sınıfı --lit rengini yeşile çevirir */
 :root {
   --bg: #0b0d0a;
@@ -8,6 +25,7 @@
   --tick: #2a2616;
   --alert: #ff5a3c;   /* minimum eşik çentiği ve çok sapınca kırmızı renk */
   --bar: 28px;        /* iki barın da kalınlığı */
+  --ghost-op: 0.05;   /* sönük segmentlerin görünürlüğü: 0 = yok, 0.05 = silik, 0.12 = belirgin */
 }
 .unit.in-tune { --lit: #3dff7a; --text: #7fd69c; }
 /* 35 sentten fazla sapınca amber yerine kırmızı yanar */
@@ -19,7 +37,8 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: Consolas, "Courier New", monospace;
+  font-family: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  font-weight: 500;
   letter-spacing: 0.08em;
 }
 
@@ -30,7 +49,7 @@ body {
   margin: 0 auto;
   padding: 16px;
   display: grid;
-  grid-template-columns: 44px 1fr;
+  grid-template-columns: var(--bar) 1fr;
   grid-template-rows: auto 1fr auto auto;
   gap: 14px 16px;
 }
@@ -39,9 +58,9 @@ header {
   grid-column: 1 / -1;
   display: flex;
   justify-content: space-between;
-  font-size: 0.85rem;
+  font-size: 1rem;
 }
-.status { color: var(--lit); }
+.status { color: var(--lit); font-weight: 600; margin-right: -0.08em; }  /* harf aralığı payını sıfırla */
 
 /* ---- 7 segment ekranlar (sönük segment yok, sadece yananlar görünür) ---- */
 .readout {
@@ -51,36 +70,48 @@ header {
   justify-content: center;
   gap: 3vh;
 }
-.note-row { display: flex; align-items: flex-end; gap: 10px; }
-.line { display: flex; align-items: flex-end; gap: 8px; }
+.note-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; }
+.note-aux {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-left: 10px;
+}
+.line { display: flex; justify-content: center; align-items: flex-end; gap: 8px; }
 .display { display: flex; gap: 1.2vh; transform: skewX(-6deg); }
 .digit { aspect-ratio: 66 / 100; width: auto; }
 .big .digit { height: min(26vh, 38vw); }
 .mid .digit { height: min(11vh, 16vw); }
 .small .digit { height: min(3.6vh, 5.5vw); }
 
-.seg, .dp { fill: transparent; }
-.seg.on, .dp.on { fill: var(--lit); }
+/* Sönük segmentler belli belirsiz görünür, yanınca tam parlaklığa çıkar */
+.seg, .dp { fill: var(--lit); opacity: var(--ghost-op); }
+/* 16 segmentin çapraz parçaları şimdilik kullanılmıyor, sönükken gizli */
+.seg[data-s="h"], .seg[data-s="j"], .seg[data-s="k"], .seg[data-s="m"] { opacity: 0; }
+.seg.on, .dp.on { opacity: 1; }
 
 /* Sinyal lambası: ses eşiğin altındayken nota hanesinin noktası yanıp söner */
-.listening .dp { fill: var(--lit); animation: blink 1.2s steps(1, end) infinite; }
-@keyframes blink { 50% { opacity: 0; } }
+.listening .dp { opacity: 1; animation: blink 1.2s steps(1, end) infinite; }
+@keyframes blink { 0% { opacity: 1; } 50% { opacity: var(--ghost-op); } 100% { opacity: 1; } }
 
 .sharp {
-  align-self: flex-start;
   font-size: min(8vh, 12vw);
   line-height: 1;
-  color: transparent;
+  color: var(--lit);
+  opacity: var(--ghost-op);
 }
-.sharp.on { color: var(--lit); }
-.tag { font-size: 0.7rem; padding-bottom: 1px; }
+.sharp.on { opacity: 1; }
+.tag { font-size: 0.9rem; padding-bottom: 1px; }
 
 /* ---- Yatay pest/dik barı ---- */
 .pitch { grid-column: 2; }
 .pitch-labels {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  font-size: 0.8rem;
+  font-size: 1rem;
+  letter-spacing: 0;
   margin-bottom: 8px;
 }
 .pitch-labels span:first-child { justify-self: start; }
@@ -91,8 +122,7 @@ header {
   position: relative;
   height: var(--bar);
   background: var(--ghost);
-  outline: 2px solid var(--tick);
-  outline-offset: 2px;
+  border: 2px solid var(--tick);   /* dış kenar, düğme ve başlıkla aynı hizada */
 }
 /* Tam bar = 100 sent (-50...+50). Dolgu ortadan sola ya da sağa büyür */
 .fill {
@@ -123,14 +153,12 @@ header {
   grid-row: 2 / 4;
   display: flex;
   justify-content: center;
-  padding: 4px 0;
 }
 .level-bar {
   position: relative;
   width: var(--bar);
   background: var(--ghost);
-  outline: 2px solid var(--tick);
-  outline-offset: 2px;
+  border: 2px solid var(--tick);
 }
 .level-fill {
   position: absolute;
@@ -153,9 +181,10 @@ header {
 
 button {
   grid-column: 1 / -1;
-  padding: 14px;
+  padding: 14px 14px 14px calc(14px + 0.12em);   /* harf aralığı payı: yazı tam ortada dursun */
   font: inherit;
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 1.1rem;
   letter-spacing: 0.12em;
   color: var(--bg);
   background: var(--lit);
