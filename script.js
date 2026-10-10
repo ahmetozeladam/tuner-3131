@@ -5,7 +5,7 @@ const TOLERANCE = 5;   // +-5 sent içindeyse "akort tamam" say (yeşil)
 const OFF_TUNE = 35;   // bu kadar ya da daha fazla sapma varsa kırmızı
 const MIN_FREQ = 50;   // bu aralığın dışındaki sesleri yok say
 const MAX_FREQ = 2000;
-const MIN_RMS = 0.01;  // bu sesin altını ölçmüyoruz (seviye barındaki kırmızı çentik)
+const MIN_RMS = 0.005;  // bu sesin altını ölçmüyoruz (seviye barındaki kırmızı çentik)
 const DB_FLOOR = -60;  // seviye barının en altı (dB)
 
 // ---------- 7 segment ekran çizimi ----------
