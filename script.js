@@ -1,7 +1,8 @@
 // ---------- Ayarlar ----------
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const A4_FREQ = 440;   // Referans: A4 = 440 Hz
-const TOLERANCE = 5;   // +-5 sent içindeyse "akort tamam" say
+const TOLERANCE = 5;   // +-5 sent içindeyse "akort tamam" say (yeşil)
+const OFF_TUNE = 35;   // bu kadar ya da daha fazla sapma varsa kırmızı
 const MIN_FREQ = 50;   // bu aralığın dışındaki sesleri yok say
 const MAX_FREQ = 2000;
 const MIN_RMS = 0.01;  // bu sesin altını ölçmüyoruz (seviye barındaki kırmızı çentik)
@@ -75,10 +76,8 @@ const unit = $('unit');
 const sharpEl = $('sharp');
 const statusEl = $('status');
 const startBtn = $('start');
-const okL = $('okL');
-const hotL = $('hotL');
-const okR = $('okR');
-const hotR = $('hotR');
+const fillL = $('fillL');
+const fillR = $('fillR');
 const centsText = $('centsText');
 const noteDisp = $('noteDisp');
 const levelBar = $('levelBar');
@@ -169,16 +168,10 @@ function showLevel(rms) {
 }
 
 // ---------- Yatay bar: ortadan sola (pest) ya da sağa (dik) büyür ----------
-// 0-35 sent arası normal renk, 35-50 sent arası kırmızı yanar
 function setBar(cents) {
-  const a = Math.abs(cents);
-  const ok = Math.min(a, 35) / 35;
-  const hot = Math.min(Math.max(a - 35, 0) / 15, 1);
-  const flat = cents < 0;
-  okL.style.transform = `scaleX(${flat ? ok : 0})`;
-  hotL.style.transform = `scaleX(${flat ? hot : 0})`;
-  okR.style.transform = `scaleX(${flat ? 0 : ok})`;
-  hotR.style.transform = `scaleX(${flat ? 0 : hot})`;
+  const amount = Math.min(Math.abs(cents) / 50, 1);   // +-50 sent = tam bar
+  fillL.style.transform = `scaleX(${cents < 0 ? amount : 0})`;
+  fillR.style.transform = `scaleX(${cents > 0 ? amount : 0})`;
 }
 
 // ---------- Frekansı nota + sent değerine çevir ----------
@@ -203,6 +196,7 @@ function show(freq) {
 
   const inTune = Math.abs(shownCents) <= TOLERANCE;
   unit.classList.toggle('in-tune', inTune);
+  unit.classList.toggle('off-tune', Math.abs(shownCents) >= OFF_TUNE);
   statusEl.textContent = inTune
     ? 'AKORT TAMAM'
     : shownCents < 0 ? 'PEST: SESİ YÜKSELT' : 'DİK: SESİ DÜŞÜR';
@@ -217,7 +211,7 @@ function idle() {
   centsText.textContent = '--';
   sharpEl.classList.remove('on');
   setBar(0);
-  unit.classList.remove('in-tune');
+  unit.classList.remove('in-tune', 'off-tune');
   if (audioCtx) statusEl.textContent = 'BİR NOTA ÇAL';
 }
 

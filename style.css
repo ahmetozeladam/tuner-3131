@@ -6,10 +6,12 @@
   --dim: #5a4a22;     /* eşiğin altındaki seviye */
   --text: #a89a6a;
   --tick: #2a2616;
-  --alert: #ff5a3c;   /* minimum eşik çentiği ve 35-50 sent bölgesi */
+  --alert: #ff5a3c;   /* minimum eşik çentiği ve çok sapınca kırmızı renk */
   --bar: 28px;        /* iki barın da kalınlığı */
 }
 .unit.in-tune { --lit: #3dff7a; --text: #7fd69c; }
+/* 35 sentten fazla sapınca amber yerine kırmızı yanar */
+.unit.off-tune { --lit: var(--alert); --text: #d98a7a; }
 
 * { box-sizing: border-box; }
 
@@ -92,29 +94,18 @@ header {
   outline: 2px solid var(--tick);
   outline-offset: 2px;
 }
-/* her 10 sentte bir cetvel çizgisi (bar içinde kalır) */
-.pitch-bar::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(to right,
-    transparent 0, transparent calc(10% - 1px), var(--tick) calc(10% - 1px), var(--tick) 10%);
-}
-/* Tam bar = 100 sent (-50...+50), yani 1 sent = barın %1'i.
-   "ok" parça 0-35 sent arası, "hot" (kırmızı) parça 35-50 sent arası */
+/* Tam bar = 100 sent (-50...+50). Dolgu ortadan sola ya da sağa büyür */
 .fill {
   position: absolute;
   top: 0;
   bottom: 0;
+  width: 50%;
+  background: var(--lit);
   transform: scaleX(0);
   transition: transform 0.12s linear;
 }
-.fill.ok { background: var(--lit); width: 35%; }
-.fill.hot { background: var(--alert); width: 15%; }
-.fill.ok.left { right: 50%; transform-origin: right center; }
-.fill.ok.right { left: 50%; transform-origin: left center; }
-.fill.hot.left { left: 0; transform-origin: right center; }
-.fill.hot.right { left: 85%; transform-origin: left center; }
+.fill.left { left: 0; transform-origin: right center; }
+.fill.right { left: 50%; transform-origin: left center; }
 /* ortadaki +-5 sentlik "akort tamam" bölgesi */
 .zone {
   position: absolute;
