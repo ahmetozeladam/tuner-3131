@@ -25,6 +25,38 @@ const GLYPHS = {
   'B': 'cdefg', 'D': 'bcdeg',
 };
 
+// ---------- 16 segment ekran (nota harfi için) ----------
+// Segment adı: [x1, y1, x2, y2, kalınlık]. a/d/g yatay, b/c/e/f/i/l dikey, h/j/k/m çapraz
+const LINES16 = {
+  a1: [10, 6, 28, 6, 7], a2: [32, 6, 50, 6, 7], d1: [10, 94, 28, 94, 7], d2: [32, 94, 50, 94, 7],
+  g1: [10, 50, 28, 50, 7], g2: [32, 50, 50, 50, 7],
+  f: [6, 10, 6, 46, 7], e: [6, 54, 6, 90, 7], b: [54, 10, 54, 46, 7], c: [54, 54, 54, 90, 7],
+  i: [30, 10, 30, 46, 7], l: [30, 54, 30, 90, 7],
+  h: [13, 13, 27, 44, 6], j: [47, 13, 33, 44, 6], k: [13, 87, 27, 56, 6], m: [47, 87, 33, 56, 6],
+};
+// Hangi harf hangi segmentleri yakar (çapraz segmentler ileride başka harfler için)
+const GLYPHS16 = Object.fromEntries(Object.entries({
+  A: 'a1 a2 b c e f g1 g2', B: 'a1 a2 b c d1 d2 g2 i l', C: 'a1 a2 d1 d2 e f',
+  D: 'a1 a2 b c d1 d2 i l', E: 'a1 a2 d1 d2 e f g1', F: 'a1 a2 e f g1',
+  G: 'a1 a2 d1 d2 c e f g2', '-': 'g1 g2',
+}).map(([ch, segs]) => [ch, segs.split(' ')]));
+
+// İki ucu sivri, çizgi şeklinde bir segment (altıgen) çizer; her yönde çalışır
+function bar(x1, y1, x2, y2, w) {
+  const len = Math.hypot(x2 - x1, y2 - y1);
+  const ux = (x2 - x1) / len, uy = (y2 - y1) / len;   // çizgi yönü
+  const nx = -uy, ny = ux, k = w / 2;                  // dik yön, yarım kalınlık
+  const pts = [
+    [x1, y1],
+    [x1 + (ux + nx) * k, y1 + (uy + ny) * k],
+    [x2 + (-ux + nx) * k, y2 + (-uy + ny) * k],
+    [x2, y2],
+    [x2 + (-ux - nx) * k, y2 + (-uy - ny) * k],
+    [x1 + (ux - nx) * k, y1 + (uy - ny) * k],
+  ];
+  return pts.map(([x, y]) => x.toFixed(1) + ',' + y.toFixed(1)).join(' ');
+}
+
 // Altıgen şeklinde bir segment çizer
 function hexagon(cx, cy, horizontal) {
   const h = 18, k = 4; // yarım uzunluk, yarım kalınlık
@@ -33,15 +65,18 @@ function hexagon(cx, cy, horizontal) {
 }
 
 // `count` haneli bir ekran kurar ve ona yazı yazan bir fonksiyon döndürür
-function makeDisplay(el, count) {
+function makeDisplay(el, count, kind = 'seven') {
   const digits = [];
   for (let i = 0; i < count; i++) {
     const svg = document.createElementNS(NS, 'svg');
     svg.setAttribute('viewBox', '0 0 66 100');
     svg.classList.add('digit');
-    for (const [name, [cx, cy, horizontal]] of Object.entries(SEGMENTS)) {
+    const shapes = kind === 'sixteen'
+      ? Object.entries(LINES16).map(([name, line]) => [name, bar(...line)])
+      : Object.entries(SEGMENTS).map(([name, [cx, cy, horizontal]]) => [name, hexagon(cx, cy, horizontal)]);
+    for (const [name, points] of shapes) {
       const poly = document.createElementNS(NS, 'polygon');
-      poly.setAttribute('points', hexagon(cx, cy, horizontal));
+      poly.setAttribute('points', points);
       poly.setAttribute('class', 'seg');
       poly.dataset.s = name;
       svg.appendChild(poly);
@@ -63,7 +98,7 @@ function makeDisplay(el, count) {
     while (items.length < count) items.unshift({ ch: ' ', dp: false }); // sağa yasla
     const shown = items.slice(-count);
     digits.forEach((svg, i) => {
-      const lit = GLYPHS[shown[i].ch] || '';
+      const lit = (kind === 'sixteen' ? GLYPHS16 : GLYPHS)[shown[i].ch] || '';
       svg.querySelectorAll('.seg').forEach((p) => p.classList.toggle('on', lit.includes(p.dataset.s)));
       svg.querySelector('.dp').classList.toggle('on', shown[i].dp);
     });
@@ -83,7 +118,7 @@ const noteDisp = $('noteDisp');
 const levelBar = $('levelBar');
 const levelFill = $('levelFill');
 
-const showNote = makeDisplay($('noteDisp'), 1);
+const showNote = makeDisplay($('noteDisp'), 1, 'sixteen');
 const showOctave = makeDisplay($('octDisp'), 1);
 const showFreq = makeDisplay($('freqDisp'), 5);
 
