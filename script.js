@@ -3,10 +3,51 @@ const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 
 const A4_FREQ = 440;   // Referans: A4 = 440 Hz
 const TOLERANCE = 5;   // +-5 sent içindeyse "akort tamam" say (yeşil)
 const OFF_TUNE = 35;   // bu kadar ya da daha fazla sapma varsa kırmızı
-const MIN_FREQ = 50;   // bu aralığın dışındaki sesleri yok say
+const MIN_FREQ = 28;   // en alçak bas teli (B0, 31 Hz) için; bu aralığın dışındaki sesleri yok say
 const MAX_FREQ = 2000;
-const MIN_RMS = 0.005;  // bu sesin altını ölçmüyoruz (seviye barındaki kırmızı çentik)
+const MIN_RMS = 0.01;  // bu sesin altını ölçmüyoruz (seviye barındaki kırmızı çentik)
 const DB_FLOOR = -60;  // seviye barının en altı (dB)
+
+// ---------- Enstrümanlar ve akort düzenleri ----------
+// Teller en alçaktan en yükseğe (ukulelede fiziksel sırayla) yazılı. Yeni düzen eklemek için
+// buraya bir satır eklemen yeterli.
+const INSTRUMENTS = [
+  { name: 'GUITAR', tunings: [
+    { name: 'STANDARD', strings: ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'] },
+    { name: 'HALF STEP DOWN', strings: ['D#2', 'G#2', 'C#3', 'F#3', 'A#3', 'D#4'] },
+    { name: 'FULL STEP DOWN', strings: ['D2', 'G2', 'C3', 'F3', 'A3', 'D4'] },
+    { name: 'DROP D', strings: ['D2', 'A2', 'D3', 'G3', 'B3', 'E4'] },
+    { name: 'OPEN D', strings: ['D2', 'A2', 'D3', 'F#3', 'A3', 'D4'] },
+    { name: 'DROP C', strings: ['C2', 'G2', 'C3', 'F3', 'A3', 'D4'] },
+    { name: 'DADGAD', strings: ['D2', 'A2', 'D3', 'G3', 'A3', 'D4'] },
+  ] },
+  { name: '12 STRING GUITAR', tunings: [
+    { name: 'STANDARD', strings: ['E2', 'E3', 'A2', 'A3', 'D3', 'D4', 'G3', 'G4', 'B3', 'B3', 'E4', 'E4'] },
+    { name: 'HALF STEP DOWN', strings: ['D#2', 'D#3', 'G#2', 'G#3', 'C#3', 'C#4', 'F#3', 'F#4', 'A#3', 'A#3', 'D#4', 'D#4'] },
+    { name: 'FULL STEP DOWN', strings: ['D2', 'D3', 'G2', 'G3', 'C3', 'C4', 'F3', 'F4', 'A3', 'A3', 'D4', 'D4'] },
+    { name: 'DROP D', strings: ['D2', 'D3', 'A2', 'A3', 'D3', 'D4', 'G3', 'G4', 'B3', 'B3', 'E4', 'E4'] },
+    { name: 'OPEN D', strings: ['D2', 'D3', 'A2', 'A3', 'D3', 'D4', 'F#3', 'F#4', 'A3', 'A3', 'D4', 'D4'] },
+    { name: 'DROP C', strings: ['C2', 'C3', 'G2', 'G3', 'C3', 'C4', 'F3', 'F4', 'A3', 'A3', 'D4', 'D4'] },
+  ] },
+  { name: 'BASS', tunings: [
+    { name: '4 STRING', strings: ['E1', 'A1', 'D2', 'G2'] },
+    { name: '5 STRING', strings: ['B0', 'E1', 'A1', 'D2', 'G2'] },
+  ] },
+  { name: 'UKULELE', tunings: [
+    { name: 'STANDARD', strings: ['G4', 'C4', 'E4', 'A4'] },
+    { name: 'BARITONE', strings: ['D3', 'G3', 'B3', 'E4'] },
+  ] },
+];
+
+// "E2" ya da "C#3" gibi nota adını MIDI numarasına çevir (A4 = 69)
+function noteToMidi(name) {
+  const m = /^([A-G])(#?)(\d)$/.exec(name);
+  const base = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]];
+  return (Number(m[3]) + 1) * 12 + base + (m[2] ? 1 : 0);
+}
+function midiToFreq(midi) {
+  return A4_FREQ * Math.pow(2, (midi - 69) / 12);
+}
 
 // ---------- 7 segment ekran çizimi ----------
 const NS = 'http://www.w3.org/2000/svg';
@@ -115,6 +156,11 @@ const fillL = $('fillL');
 const fillR = $('fillR');
 const centsText = $('centsText');
 const noteDisp = $('noteDisp');
+const modeBtn = $('modeBtn');
+const modeLabel = $('modeLabel');
+const stringsEl = $('strings');
+const sheet = $('sheet');
+const sheetList = $('sheetList');
 const levelBar = $('levelBar');
 const levelFill = $('levelFill');
 
@@ -137,9 +183,77 @@ let lastHeard = 0;     // en son ne zaman nota duyduk
 let lastNote = null;
 let shownCents = 0;    // yumuşatılmış sent değeri
 let shownLevel = 0;    // yumuşatılmış seviye
+let tuning = null;     // null = kromatik, yoksa seçili düzenin telleri [{ name, midi, freq }]
+let tuningKey = '';    // seçili düzenin kaydı: 'GUITAR|STANDARD' (kromatikte boş)
 
 idle();
+restoreTuning();
 startBtn.addEventListener('click', startTuner);
+modeBtn.addEventListener('click', openSheet);
+$('sheetClose').addEventListener('click', () => { sheet.hidden = true; });
+
+// ---------- Akort düzeni seçimi ----------
+function setTuning(instrument, t) {
+  stringsEl.textContent = '';
+  if (!t) {
+    tuning = null;
+    tuningKey = '';
+    modeLabel.textContent = 'CHROMATIC';
+  } else {
+    tuning = t.strings.map((name) => ({ name, midi: noteToMidi(name), freq: midiToFreq(noteToMidi(name)) }));
+    tuningKey = instrument.name + '|' + t.name;
+    modeLabel.textContent = instrument.name + ' / ' + t.name;
+    for (const s of tuning) {
+      const el = document.createElement('span');
+      el.textContent = s.name;
+      stringsEl.appendChild(el);
+    }
+  }
+  // 6 telden fazlası (12 telli gitar) çiftler halinde alt alta dizilir: üstte E2 A2 D3..., altta E3 A3 D4...
+  stringsEl.classList.toggle('pairs', !!tuning && tuning.length > 6);
+  lastNote = null;
+  try { localStorage.setItem('tuner-tuning', tuningKey); } catch (e) { /* kayıt olmazsa sorun değil */ }
+}
+
+// Uygulama açılırken son seçilen düzeni geri yükle
+function restoreTuning() {
+  let key = '';
+  try { key = localStorage.getItem('tuner-tuning') || ''; } catch (e) { /* yoksay */ }
+  const [iName, tName] = key.split('|');
+  for (const inst of INSTRUMENTS) {
+    for (const t of inst.tunings) {
+      if (inst.name === iName && t.name === tName) { setTuning(inst, t); return; }
+    }
+  }
+}
+
+// Liste ekranını kur ve aç
+function openSheet() {
+  sheetList.textContent = '';
+  const add = (title, detail, key, pick) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'item' + (key === tuningKey ? ' sel' : '');
+    const t = document.createElement('span');
+    t.textContent = title;
+    const d = document.createElement('small');
+    d.textContent = detail;
+    b.append(t, d);
+    b.addEventListener('click', () => { pick(); sheet.hidden = true; });
+    sheetList.appendChild(b);
+  };
+  add('CHROMATIC', 'ALL NOTES', '', () => setTuning(null, null));
+  for (const inst of INSTRUMENTS) {
+    const g = document.createElement('div');
+    g.className = 'group';
+    g.textContent = inst.name;
+    sheetList.appendChild(g);
+    for (const t of inst.tunings) {
+      add(t.name, t.strings.map((s) => s.replace(/\d/, '')).join(' '), inst.name + '|' + t.name, () => setTuning(inst, t));
+    }
+  }
+  sheet.hidden = false;
+}
 
 // ---------- Mikrofonu başlat ----------
 async function startTuner() {
@@ -211,10 +325,22 @@ function setBar(cents) {
 
 // ---------- Frekansı nota + sent değerine çevir ----------
 function show(freq) {
-  // MIDI numarası: A4 = 69. Her yarım ses = 1 numara.
-  const midi = 12 * Math.log2(freq / A4_FREQ) + 69;
-  const nearest = Math.round(midi);          // en yakın nota
-  const cents = (midi - nearest) * 100;      // notadan sapma (1 yarım ses = 100 sent)
+  let nearest, cents, stringIndex = -1;
+  if (tuning) {
+    // Seçili düzende: çalınan sese en yakın teli bul, sapmayı o telin notasına göre hesapla
+    let best = Infinity;
+    tuning.forEach((s, i) => {
+      const d = Math.abs(Math.log2(freq / s.freq));
+      if (d < best) { best = d; stringIndex = i; }
+    });
+    nearest = tuning[stringIndex].midi;
+    cents = 1200 * Math.log2(freq / tuning[stringIndex].freq);
+  } else {
+    // Kromatik: MIDI numarası A4 = 69, her yarım ses = 1 numara
+    const midi = 12 * Math.log2(freq / A4_FREQ) + 69;
+    nearest = Math.round(midi);              // en yakın nota
+    cents = (midi - nearest) * 100;          // notadan sapma (1 yarım ses = 100 sent)
+  }
 
   // Nota değiştiyse yumuşatmayı sıfırla, değilse bar titremesin diye ortalama al
   shownCents = nearest === lastNote ? shownCents * 0.6 + cents * 0.4 : cents;
@@ -228,6 +354,7 @@ function show(freq) {
   const rounded = Math.round(shownCents);
   centsText.textContent = (rounded > 0 ? '+' : '') + rounded;
   setBar(shownCents);
+  Array.from(stringsEl.children).forEach((el, i) => el.classList.toggle('on', i === stringIndex));
 
   const inTune = Math.abs(shownCents) <= TOLERANCE;
   unit.classList.toggle('in-tune', inTune);
@@ -246,6 +373,7 @@ function idle() {
   centsText.textContent = '--';
   sharpEl.classList.remove('on');
   setBar(0);
+  Array.from(stringsEl.children).forEach((el) => el.classList.remove('on'));
   unit.classList.remove('in-tune', 'off-tune');
   if (audioCtx) statusEl.textContent = 'PLAY A NOTE';
 }
