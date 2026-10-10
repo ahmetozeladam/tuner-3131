@@ -425,8 +425,3 @@ function findPitch(buf, sampleRate) {
   const freq = rate / period;
   return freq >= MIN_FREQ && freq <= MAX_FREQ ? freq : -1;
 }
-
-// ---------- Uygulama olarak yüklenebilmesi için service worker'ı kaydet ----------
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
-}
