@@ -20,6 +20,14 @@
       <span class="status" id="status">MİKROFONU AÇ</span>
     </header>
 
+    <!-- Sol: mikrofon seviyesi. Kırmızı çentik = ölçüm için minimum eşik -->
+    <aside class="level">
+      <div class="level-bar" id="levelBar">
+        <div class="level-fill" id="levelFill"></div>
+        <div class="notch"></div>
+      </div>
+    </aside>
+
     <!-- 7 segment ekranlar: içleri script.js tarafından çizilir -->
     <section class="readout">
       <div class="note-row">
@@ -28,27 +36,19 @@
         <div class="display mid" id="octDisp"></div>
       </div>
       <div class="line"><div class="display small" id="freqDisp"></div><span class="tag">HZ</span></div>
-      <div class="line"><div class="display small" id="centsDisp"></div><span class="tag">SENT</span></div>
     </section>
 
-    <!-- Yatay bar: ortadan sola büyürse pest, sağa büyürse dik -->
+    <!-- Yatay bar: ortadan sola büyürse pest, sağa büyürse dik. 35-50 sent arası kırmızı -->
     <section class="pitch">
-      <div class="pitch-labels"><span>PEST &#9837;</span><span>0</span><span>DİK &#9839;</span></div>
+      <div class="pitch-labels"><span>-50</span><span id="centsText">--</span><span>+50</span></div>
       <div class="pitch-bar">
-        <div class="fill left" id="fillL"></div>
-        <div class="fill right" id="fillR"></div>
+        <div class="fill ok left" id="okL"></div>
+        <div class="fill hot left" id="hotL"></div>
+        <div class="fill ok right" id="okR"></div>
+        <div class="fill hot right" id="hotR"></div>
         <div class="zone"></div>
       </div>
     </section>
-
-    <!-- Dikey bar: mikrofon seviyesi. Kırmızı çentik = ölçüm için minimum eşik -->
-    <aside class="level">
-      <div class="level-bar" id="levelBar">
-        <div class="level-fill" id="levelFill"></div>
-        <div class="notch"></div>
-      </div>
-      <span class="tag">SEVİYE</span>
-    </aside>
 
     <button id="start" type="button">MİKROFONU BAŞLAT</button>
   </main>

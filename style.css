@@ -1,12 +1,13 @@
 /* Renkler tek yerde. Akort tamamlanınca .in-tune sınıfı --lit rengini yeşile çevirir */
 :root {
   --bg: #0b0d0a;
-  --ghost: #1c1a10;   /* sönük segment */
-  --lit: #ffb02e;     /* yanan segment */
+  --ghost: #1c1a10;   /* barların arka zemini */
+  --lit: #ffb02e;     /* yanan segment / bar */
   --dim: #5a4a22;     /* eşiğin altındaki seviye */
   --text: #a89a6a;
   --tick: #2a2616;
-  --alert: #ff5a3c;   /* minimum eşik çentiği */
+  --alert: #ff5a3c;   /* minimum eşik çentiği ve 35-50 sent bölgesi */
+  --bar: 28px;        /* iki barın da kalınlığı */
 }
 .unit.in-tune { --lit: #3dff7a; --text: #7fd69c; }
 
@@ -27,7 +28,7 @@ body {
   margin: 0 auto;
   padding: 16px;
   display: grid;
-  grid-template-columns: 1fr 72px;
+  grid-template-columns: 44px 1fr;
   grid-template-rows: auto 1fr auto auto;
   gap: 14px 16px;
 }
@@ -40,43 +41,58 @@ header {
 }
 .status { color: var(--lit); }
 
-/* ---- 7 segment ekranlar ---- */
+/* ---- 7 segment ekranlar (sönük segment yok, sadece yananlar görünür) ---- */
 .readout {
+  grid-column: 2;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 3vh;
 }
 .note-row { display: flex; align-items: flex-end; gap: 10px; }
-.line { display: flex; align-items: flex-end; gap: 12px; }
+.line { display: flex; align-items: flex-end; gap: 8px; }
 .display { display: flex; gap: 1.2vh; transform: skewX(-6deg); }
 .digit { aspect-ratio: 66 / 100; width: auto; }
 .big .digit { height: min(26vh, 38vw); }
 .mid .digit { height: min(11vh, 16vw); }
-.small .digit { height: min(7vh, 10vw); }
+.small .digit { height: min(3.6vh, 5.5vw); }
 
-.seg, .dp { fill: var(--ghost); }
+.seg, .dp { fill: transparent; }
 .seg.on, .dp.on { fill: var(--lit); }
+
+/* Sinyal lambası: ses eşiğin altındayken nota hanesinin noktası yanıp söner */
+.listening .dp { fill: var(--lit); animation: blink 1.2s steps(1, end) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
 
 .sharp {
   align-self: flex-start;
   font-size: min(8vh, 12vw);
   line-height: 1;
-  color: var(--ghost);
+  color: transparent;
 }
 .sharp.on { color: var(--lit); }
-.tag { font-size: 0.85rem; padding-bottom: 4px; }
+.tag { font-size: 0.7rem; padding-bottom: 1px; }
 
 /* ---- Yatay pest/dik barı ---- */
-.pitch-labels { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 8px; }
+.pitch { grid-column: 2; }
+.pitch-labels {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+}
+.pitch-labels span:first-child { justify-self: start; }
+.pitch-labels span:last-child { justify-self: end; }
+#centsText { color: var(--lit); }
+
 .pitch-bar {
   position: relative;
-  height: 44px;
+  height: var(--bar);
   background: var(--ghost);
   outline: 2px solid var(--tick);
   outline-offset: 2px;
 }
-/* her 10 sentte bir cetvel çizgisi */
+/* her 10 sentte bir cetvel çizgisi (bar içinde kalır) */
 .pitch-bar::before {
   content: "";
   position: absolute;
@@ -84,42 +100,43 @@ header {
   background: repeating-linear-gradient(to right,
     transparent 0, transparent calc(10% - 1px), var(--tick) calc(10% - 1px), var(--tick) 10%);
 }
+/* Tam bar = 100 sent (-50...+50), yani 1 sent = barın %1'i.
+   "ok" parça 0-35 sent arası, "hot" (kırmızı) parça 35-50 sent arası */
 .fill {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 50%;
-  background: var(--lit);
   transform: scaleX(0);
   transition: transform 0.12s linear;
 }
-.fill.left { left: 0; transform-origin: right center; }
-.fill.right { left: 50%; transform-origin: left center; }
+.fill.ok { background: var(--lit); width: 35%; }
+.fill.hot { background: var(--alert); width: 15%; }
+.fill.ok.left { right: 50%; transform-origin: right center; }
+.fill.ok.right { left: 50%; transform-origin: left center; }
+.fill.hot.left { left: 0; transform-origin: right center; }
+.fill.hot.right { left: 85%; transform-origin: left center; }
 /* ortadaki +-5 sentlik "akort tamam" bölgesi */
 .zone {
   position: absolute;
-  top: -6px;
-  bottom: -6px;
+  top: 0;
+  bottom: 0;
   left: 45%;
   width: 10%;
   border-left: 2px solid var(--text);
   border-right: 2px solid var(--text);
 }
 
-/* ---- Dikey seviye barı ---- */
+/* ---- Dikey seviye barı (solda) ---- */
 .level {
-  grid-column: 2;
+  grid-column: 1;
   grid-row: 2 / 4;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding-top: 4px;
+  justify-content: center;
+  padding: 4px 0;
 }
 .level-bar {
   position: relative;
-  flex: 1;
-  width: 28px;
+  width: var(--bar);
   background: var(--ghost);
   outline: 2px solid var(--tick);
   outline-offset: 2px;
@@ -136,19 +153,11 @@ header {
 /* --min değerini script.js hesaplar: MIN_RMS seviyesinin bar üzerindeki yeri */
 .notch {
   position: absolute;
-  left: -8px;
-  right: -8px;
-  bottom: var(--min, 33%);
+  left: 0;
+  right: 0;
+  bottom: calc(var(--min, 33%) - 1px);
   height: 2px;
   background: var(--alert);
-}
-.notch::after {
-  content: "MİN";
-  position: absolute;
-  left: calc(100% + 4px);
-  top: -6px;
-  font-size: 9px;
-  color: var(--alert);
 }
 
 button {
@@ -167,4 +176,5 @@ button[hidden] { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .fill, .level-fill { transition: none; }
+  .listening .dp { animation: none; }
 }

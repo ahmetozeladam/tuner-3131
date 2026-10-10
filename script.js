@@ -20,6 +20,8 @@ const GLYPHS = {
   '5': 'acdfg', '6': 'acdefg', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg',
   'A': 'abcefg', 'b': 'cdefg', 'C': 'adef', 'd': 'bcdeg', 'E': 'adefg',
   'F': 'aefg', 'G': 'acdef', '-': 'g', ' ': '',
+  // 7 segmentte büyük B ve D, 8 ile 0'a benzer; bu yüzden küçük b ve d çizilir
+  'B': 'cdefg', 'D': 'bcdeg',
 };
 
 // Altıgen şeklinde bir segment çizer
@@ -44,7 +46,7 @@ function makeDisplay(el, count) {
       svg.appendChild(poly);
     }
     const dot = document.createElementNS(NS, 'circle');
-    dot.setAttribute('cx', 61); dot.setAttribute('cy', 94); dot.setAttribute('r', 4);
+    dot.setAttribute('cx', 61); dot.setAttribute('cy', 94); dot.setAttribute('r', 5);
     dot.setAttribute('class', 'dp');
     svg.appendChild(dot);
     el.appendChild(svg);
@@ -73,15 +75,18 @@ const unit = $('unit');
 const sharpEl = $('sharp');
 const statusEl = $('status');
 const startBtn = $('start');
-const fillL = $('fillL');
-const fillR = $('fillR');
+const okL = $('okL');
+const hotL = $('hotL');
+const okR = $('okR');
+const hotR = $('hotR');
+const centsText = $('centsText');
+const noteDisp = $('noteDisp');
 const levelBar = $('levelBar');
 const levelFill = $('levelFill');
 
 const showNote = makeDisplay($('noteDisp'), 1);
 const showOctave = makeDisplay($('octDisp'), 1);
 const showFreq = makeDisplay($('freqDisp'), 5);
-const showCents = makeDisplay($('centsDisp'), 3);
 
 // ---------- Seviye barı: RMS değerini 0-1 arasına çevir (dB ölçeği) ----------
 function levelOf(rms) {
@@ -133,6 +138,8 @@ function loop(now) {
 
     const rms = getRms(buffer);
     showLevel(rms);
+    // Ses eşiğin altındayken nota hanesinin noktası yanıp söner (sistem çalışıyor)
+    noteDisp.classList.toggle('listening', rms < MIN_RMS);
 
     // Eşiğin altındaki sesi hiç işleme
     const freq = rms >= MIN_RMS ? findPitch(buffer, audioCtx.sampleRate) : -1;
@@ -161,6 +168,19 @@ function showLevel(rms) {
   levelBar.classList.toggle('active', rms >= MIN_RMS);
 }
 
+// ---------- Yatay bar: ortadan sola (pest) ya da sağa (dik) büyür ----------
+// 0-35 sent arası normal renk, 35-50 sent arası kırmızı yanar
+function setBar(cents) {
+  const a = Math.abs(cents);
+  const ok = Math.min(a, 35) / 35;
+  const hot = Math.min(Math.max(a - 35, 0) / 15, 1);
+  const flat = cents < 0;
+  okL.style.transform = `scaleX(${flat ? ok : 0})`;
+  hotL.style.transform = `scaleX(${flat ? hot : 0})`;
+  okR.style.transform = `scaleX(${flat ? 0 : ok})`;
+  hotR.style.transform = `scaleX(${flat ? 0 : hot})`;
+}
+
 // ---------- Frekansı nota + sent değerine çevir ----------
 function show(freq) {
   // MIDI numarası: A4 = 69. Her yarım ses = 1 numara.
@@ -178,12 +198,8 @@ function show(freq) {
   showOctave(Math.floor(nearest / 12) - 1);
   showFreq(freq.toFixed(1));
   const rounded = Math.round(shownCents);
-  showCents((rounded < 0 ? '-' : '') + Math.abs(rounded));
-
-  // Yatay bar: ortadan sola (pest) ya da sağa (dik) büyür. +-50 sent = tam bar
-  const amount = Math.min(Math.abs(shownCents) / 50, 1);
-  fillL.style.transform = `scaleX(${shownCents < 0 ? amount : 0})`;
-  fillR.style.transform = `scaleX(${shownCents > 0 ? amount : 0})`;
+  centsText.textContent = (rounded > 0 ? '+' : '') + rounded;
+  setBar(shownCents);
 
   const inTune = Math.abs(shownCents) <= TOLERANCE;
   unit.classList.toggle('in-tune', inTune);
@@ -198,10 +214,9 @@ function idle() {
   showNote('-');
   showOctave(' ');
   showFreq('');
-  showCents('');
+  centsText.textContent = '--';
   sharpEl.classList.remove('on');
-  fillL.style.transform = 'scaleX(0)';
-  fillR.style.transform = 'scaleX(0)';
+  setBar(0);
   unit.classList.remove('in-tune');
   if (audioCtx) statusEl.textContent = 'BİR NOTA ÇAL';
 }
